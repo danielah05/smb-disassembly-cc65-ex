@@ -8,6 +8,10 @@ Original SMB Disassembly: https://gist.github.com/1wErt3r/4048722
 
 To compile this, you will need to install Make and CC65 https://cc65.github.io/
 
+You will also need to get your own rom of Super Mario Bros.:
+
+Super Mario Bros. (World).nes `md5: 811b027eaf99c2def7b933c5208636de`
+
 ## Windows Setup
 
 After downloading CC65, create a folder called `cc65` in the main folder and put all of the contents of the zip inside the folder.
@@ -18,7 +22,7 @@ Run `sudo apt install cc65 make` in your terminal to properly install CC65.
 
 ## Building on Windows
 
-First, place a file called "baserom.nes" file in the main folder, the CHR data is extracted from this file.
+First, place your rom into the main folder and rename it to "baserom.nes", the CHR data is extracted from this file.
 
 After that, run:
 
@@ -29,7 +33,7 @@ make -f Makefile.windows
 
 ## Building on Linux
 
-First, place a file called "baserom.nes" file in the main folder, the CHR data is extracted from this file.
+First, place your rom into the main folder and rename it to "baserom.nes", the CHR data is extracted from this file.
 
 After that, run:
 
