@@ -4,6 +4,12 @@ A fork of https://github.com/threecreepio/smb-disassembly but with a nicer file 
 
 Original SMB Disassembly: https://gist.github.com/1wErt3r/4048722
 
+## Warning
+
+This repo is incredibly incomplete and will get better over time.
+
+Please keep this in mind while browsing the code.
+
 ## Setup
 
 To compile this, you will need to install Make and CC65 https://cc65.github.io/
