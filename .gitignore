@@ -3,3 +3,4 @@
 *.dbg
 *.dep
 *.ips
+cc65/

@@ -1,0 +1,20 @@
+CC65_DIR := cc65
+
+AS = $(CC65_DIR)/bin/ca65
+CC = $(CC65_DIR)/bin/cc65
+LD = $(CC65_DIR)/bin/ld65
+
+.PHONY: clean
+
+build: main.nes
+
+%.o: src/%.asm
+	$(AS) -g --create-dep "$@.dep" --debug-info $< -o $@
+
+main.nes: layout main.o
+	$(LD) --dbgfile $@.dbg -C $^ -o $@
+
+clean:
+	rm -f main.nes *.dep *.o *.dbg
+	
+include $(wildcard *.dep)

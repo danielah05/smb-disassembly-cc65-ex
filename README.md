@@ -1,21 +1,40 @@
-# SMB Disassembly CC65
+# SMB Disassembly CC65 EX
 
-Converts doppelganger's SMB disassembly to work with the CC65 compiler suite
+A fork of https://github.com/threecreepio/smb-disassembly but with a nicer file structure.
+
+Original SMB Disassembly: https://gist.github.com/1wErt3r/4048722
 
 ## Setup
 
-Make sure you have Make and CC65 https://cc65.github.io/ installed.
+To compile this, you will need to install Make and CC65 https://cc65.github.io/
 
-On Windows it's easiest to do this using the Windows Subsystem for Linux, then running `sudo apt install cc65 make`
+## Windows Setup
 
-## Building
+After downloading CC65, create a folder called `cc65` in the main folder and put all of the contents of the zip inside the folder.
 
-To build the project, place a file called "Super Mario Bros. (World).nes" file in this folder, the CHR data is extracted from this file.
+## Linux Setup
+
+Run `sudo apt install cc65 make` in your terminal to properly install CC65.
+
+## Building on Windows
+
+First, place a file called "baserom.nes" file in the main folder, the CHR data is extracted from this file.
 
 After that, run:
 
 ```
-make clean ; optional
+make -f Makefile.windows clean (optional)
+make -f Makefile.windows
+```
+
+## Building on Linux
+
+First, place a file called "baserom.nes" file in the main folder, the CHR data is extracted from this file.
+
+After that, run:
+
+```
+make clean (optional)
 make
 ```
 
