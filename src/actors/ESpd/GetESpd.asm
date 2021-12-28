@@ -1,0 +1,1 @@
+GetESpd: lda NormalXSpdData,y  ;get appropriate horizontal speed

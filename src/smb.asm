@@ -6598,179 +6598,69 @@ CheckpointEnemyID:
         sta EnemyOffscrBitsMasked,x  ;set offscreen masked bit
         tya                          ;get identifier back and use as offset for jump engine
 
-InitEnemyRoutines:
-        jsr JumpEngine
-      
-;jump engine table for newly loaded enemy objects
-
-      .word InitNormalEnemy  ;for objects $00-$0f
-      .word InitNormalEnemy
-      .word InitNormalEnemy
-      .word InitRedKoopa
-      .word NoInitCode
-      .word InitHammerBro
-      .word InitGoomba
-      .word InitBloober
-      .word InitBulletBill
-      .word NoInitCode
-      .word InitCheepCheep
-      .word InitCheepCheep
-      .word InitPodoboo
-      .word InitPiranhaPlant
-      .word InitJumpGPTroopa
-      .word InitRedPTroopa
-
-      .word InitHorizFlySwimEnemy  ;for objects $10-$1f
-      .word InitLakitu
-      .word InitEnemyFrenzy
-      .word NoInitCode
-      .word InitEnemyFrenzy
-      .word InitEnemyFrenzy
-      .word InitEnemyFrenzy
-      .word InitEnemyFrenzy
-      .word EndFrenzy
-      .word NoInitCode
-      .word NoInitCode
-      .word InitShortFirebar
-      .word InitShortFirebar
-      .word InitShortFirebar
-      .word InitShortFirebar
-      .word InitLongFirebar
-
-      .word NoInitCode ;for objects $20-$2f
-      .word NoInitCode
-      .word NoInitCode
-      .word NoInitCode
-      .word InitBalPlatform
-      .word InitVertPlatform
-      .word LargeLiftUp
-      .word LargeLiftDown
-      .word InitHoriPlatform
-      .word InitDropPlatform
-      .word InitHoriPlatform
-      .word PlatLiftUp
-      .word PlatLiftDown
-      .word InitBowser
-      .word PwrUpJmp   ;possibly dummy value
-      .word Setup_Vine
-
-      .word NoInitCode ;for objects $30-$36
-      .word NoInitCode
-      .word NoInitCode
-      .word NoInitCode
-      .word NoInitCode
-      .word InitRetainerObj
-      .word EndOfEnemyInitCode
+.include "actors/InitEnemyRoutines.asm"
 
 ;-------------------------------------------------------------------------------------
 
-NoInitCode:
-      rts               ;this executed when enemy object has no init code
+.include "actors/NoInitCode.asm"
 
 ;--------------------------------
 
-InitGoomba:
-      jsr InitNormalEnemy  ;set appropriate horizontal speed
-      jmp SmallBBox        ;set $09 as bounding box control, set other values
+.include "actors/Goomba/InitGoomba.asm"
 
 ;--------------------------------
 
-InitPodoboo:
-      lda #$02                  ;set enemy position to below
-      sta Enemy_Y_HighPos,x     ;the bottom of the screen
-      sta Enemy_Y_Position,x
-      lsr
-      sta EnemyIntervalTimer,x  ;set timer for enemy
-      lsr
-      sta Enemy_State,x         ;initialize enemy state, then jump to use
-      jmp SmallBBox             ;$09 as bounding box size and set other things
+.include "actors/Podoboo/InitPodoboo.asm"
 
 ;--------------------------------
 
-InitRetainerObj:
-      lda #$b8                ;set fixed vertical position for
-      sta Enemy_Y_Position,x  ;princess/mushroom retainer object
-      rts
+.include "actors/RetainerObj/InitRetainerObj.asm"
 
 ;--------------------------------
 
-NormalXSpdData:
-      .byte $f8, $f4
+.include "actors/Normal/NormalXSpdData.asm"
 
-InitNormalEnemy:
-         ldy #$01              ;load offset of 1 by default
-         lda PrimaryHardMode   ;check for primary hard mode flag set
-         bne GetESpd
-         dey                   ;if not set, decrement offset
-GetESpd: lda NormalXSpdData,y  ;get appropriate horizontal speed
-SetESpd: sta Enemy_X_Speed,x   ;store as speed for enemy object
-         jmp TallBBox          ;branch to set bounding box control and other data
+.include "actors/Normal/InitNormalEnemy.asm"
+
+.include "actors/ESpd/GetESpd.asm"
+
+.include "actors/ESpd/SetESpd.asm"
 
 ;--------------------------------
 
-InitRedKoopa:
-      jsr InitNormalEnemy   ;load appropriate horizontal speed
-      lda #$01              ;set enemy state for red koopa troopa $03
-      sta Enemy_State,x
-      rts
+.include "actors/RedKoopa/InitRedKoopa.asm"
 
 ;--------------------------------
 
-HBroWalkingTimerData:
-      .byte $80, $50
+.include "actors/HammerBro/HBroWalkingTimerData.asm"
 
-InitHammerBro:
-      lda #$00                    ;init horizontal speed and timer used by hammer bro
-      sta HammerThrowingTimer,x   ;apparently to time hammer throwing
-      sta Enemy_X_Speed,x
-      ldy SecondaryHardMode       ;get secondary hard mode flag
-      lda HBroWalkingTimerData,y
-      sta EnemyIntervalTimer,x    ;set value as delay for hammer bro to walk left
-      lda #$0b                    ;set specific value for bounding box size control
-      jmp SetBBox
+.include "actors/HammerBro/InitHammerBro.asm"
 
 ;--------------------------------
 
-InitHorizFlySwimEnemy:
-      lda #$00        ;initialize horizontal speed
-      jmp SetESpd
+.include "actors/HorizFlySwimEnemy/InitHorizFlySwimEnemy.asm"
 
 ;--------------------------------
 
-InitBloober:
-           lda #$00               ;initialize horizontal speed
-           sta BlooperMoveSpeed,x
-SmallBBox: lda #$09               ;set specific bounding box size control
-           bne SetBBox            ;unconditional branch
+.include "actors/Blooper/InitBlooper.asm"
+
+.include "actors/BBox/SmallBBox.asm"
 
 ;--------------------------------
 
-InitRedPTroopa:
-          ldy #$30                    ;load central position adder for 48 pixels down
-          lda Enemy_Y_Position,x      ;set vertical coordinate into location to
-          sta RedPTroopaOrigXPos,x    ;be used as original vertical coordinate
-          bpl GetCent                 ;if vertical coordinate < $80
-          ldy #$e0                    ;if => $80, load position adder for 32 pixels up
-GetCent:  tya                         ;send central position adder to A
-          adc Enemy_Y_Position,x      ;add to current vertical coordinate
-          sta RedPTroopaCenterYPos,x  ;store as central vertical coordinate
-TallBBox: lda #$03                    ;set specific bounding box size control
-SetBBox:  sta Enemy_BoundBoxCtrl,x    ;set bounding box control here
-          lda #$02                    ;set moving direction for left
-          sta Enemy_MovingDir,x
-InitVStf: lda #$00                    ;initialize vertical speed
-          sta Enemy_Y_Speed,x         ;and movement force
-          sta Enemy_Y_MoveForce,x
-          rts
+.include "actors/RedPTroopa/InitRedPTroopa.asm"
+
+.include "actors/uncategorized/GetCent.asm"
+
+.include "actors/BBox/TallBBox.asm"
+
+.include "actors/BBox/SetBBox.asm"
+
+.include "actors/uncategorized/InitVStf.asm"
 
 ;--------------------------------
 
-InitBulletBill:
-      lda #$02                  ;set moving direction for left
-      sta Enemy_MovingDir,x
-      lda #$09                  ;set bounding box control for $09
-      sta Enemy_BoundBoxCtrl,x
-      rts
+.include "actors/BulletBill/InitBulletBill.asm"
 
 ;--------------------------------
 
@@ -6785,59 +6675,27 @@ InitCheepCheep:
 
 ;--------------------------------
 
-InitLakitu:
-      lda EnemyFrenzyBuffer      ;check to see if an enemy is already in
-      bne KillLakitu             ;the frenzy buffer, and branch to kill lakitu if so
+.include "actors/Lakitu/InitLakitu.asm"
 
-SetupLakitu:
-      lda #$00                   ;erase counter for lakitu's reappearance
-      sta LakituReappearTimer
-      jsr InitHorizFlySwimEnemy  ;set $03 as bounding box, set other attributes
-      jmp TallBBox2              ;set $03 as bounding box again (not necessary) and leave
+.include "actors/Lakitu/SetupLakitu.asm"
 
-KillLakitu:
-      jmp EraseEnemyObject
+.include "actors/Lakitu/KillLakitu.asm"
 
 ;--------------------------------
-;$01-$03 - used to hold pseudorandom difference adjusters
 
-PRDiffAdjustData:
-      .byte $26, $2c, $32, $38
-      .byte $20, $22, $24, $26
-      .byte $13, $14, $15, $16
+.include "actors/uncategorized/PRDiffAdjustData.asm"
 
-LakituAndSpinyHandler:
-          lda FrenzyEnemyTimer    ;if timer here not expired, leave
-          bne ExLSHand
-          cpx #$05                ;if we are on the special use slot, leave
-          bcs ExLSHand
-          lda #$80                ;set timer
-          sta FrenzyEnemyTimer
-          ldy #$04                ;start with the last enemy slot
-ChkLak:   lda Enemy_ID,y          ;check all enemy slots to see
-          cmp #Lakitu             ;if lakitu is on one of them
-          beq CreateSpiny         ;if so, branch out of this loop
-          dey                     ;otherwise check another slot
-          bpl ChkLak              ;loop until all slots are checked
-          inc LakituReappearTimer ;increment reappearance timer
-          lda LakituReappearTimer
-          cmp #$07                ;check to see if we're up to a certain value yet
-          bcc ExLSHand            ;if not, leave
-          ldx #$04                ;start with the last enemy slot again
-ChkNoEn:  lda Enemy_Flag,x        ;check enemy buffer flag for non-active enemy slot
-          beq CreateL             ;branch out of loop if found
-          dex                     ;otherwise check next slot
-          bpl ChkNoEn             ;branch until all slots are checked
-          bmi RetEOfs             ;if no empty slots were found, branch to leave
-CreateL:  lda #$00                ;initialize enemy state
-          sta Enemy_State,x
-          lda #Lakitu             ;create lakitu enemy object
-          sta Enemy_ID,x
-          jsr SetupLakitu         ;do a sub to set up lakitu
-          lda #$20
-          jsr PutAtRightExtent    ;finish setting up lakitu
-RetEOfs:  ldx ObjectOffset        ;get enemy object buffer offset again and leave
-ExLSHand: rts
+.include "actors/Lakitu/LakituAndSpinyHandler.asm"
+
+.include "actors/Lakitu/ChkLak.asm"
+
+.include "actors/Lakitu/ChkNoEn.asm"
+
+.include "actors/Lakitu/CreateL.asm"
+
+.include "actors/uncategorized/RetEOfs.asm"
+
+.include "actors/Lakitu/ExLSHand.asm"
 
 ;--------------------------------
 

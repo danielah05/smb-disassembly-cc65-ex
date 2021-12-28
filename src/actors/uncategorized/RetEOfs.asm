@@ -1,0 +1,1 @@
+RetEOfs:  ldx ObjectOffset        ;get enemy object buffer offset again and leave

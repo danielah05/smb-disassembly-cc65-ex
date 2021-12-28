@@ -1,0 +1,1 @@
+TallBBox: lda #$03                    ;set specific bounding box size control

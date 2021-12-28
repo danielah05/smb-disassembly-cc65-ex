@@ -1,0 +1,2 @@
+KillLakitu:
+      jmp EraseEnemyObject
