@@ -6650,7 +6650,7 @@ CheckpointEnemyID:
 
 .include "actors/RedPTroopa/InitRedPTroopa.asm"
 
-.include "actors/uncategorized/GetCent.asm"
+.include "actors/RedPTroopa/GetCent.asm"
 
 .include "actors/BBox/TallBBox.asm"
 
@@ -6664,14 +6664,7 @@ CheckpointEnemyID:
 
 ;--------------------------------
 
-InitCheepCheep:
-      jsr SmallBBox              ;set vertical bounding box, speed, init others
-      lda PseudoRandomBitReg,x   ;check one portion of LSFR
-      and #%00010000             ;get d4 from it
-      sta CheepCheepMoveMFlag,x  ;save as movement flag of some sort
-      lda Enemy_Y_Position,x
-      sta CheepCheepOrigYPos,x   ;save original vertical coordinate here
-      rts
+.include "actors/CheepCheep/InitCheepCheep.asm"
 
 ;--------------------------------
 
@@ -6683,7 +6676,7 @@ InitCheepCheep:
 
 ;--------------------------------
 
-.include "actors/uncategorized/PRDiffAdjustData.asm"
+.include "actors/Lakitu/PRDiffAdjustData.asm"
 
 .include "actors/Lakitu/LakituAndSpinyHandler.asm"
 
@@ -6693,291 +6686,79 @@ InitCheepCheep:
 
 .include "actors/Lakitu/CreateL.asm"
 
-.include "actors/uncategorized/RetEOfs.asm"
+.include "actors/Lakitu/RetEOfs.asm"
 
 .include "actors/Lakitu/ExLSHand.asm"
 
 ;--------------------------------
 
-CreateSpiny:
-          lda Player_Y_Position      ;if player above a certain point, branch to leave
-          cmp #$2c
-          bcc ExLSHand
-          lda Enemy_State,y          ;if lakitu is not in normal state, branch to leave
-          bne ExLSHand
-          lda Enemy_PageLoc,y        ;store horizontal coordinates (high and low) of lakitu
-          sta Enemy_PageLoc,x        ;into the coordinates of the spiny we're going to create
-          lda Enemy_X_Position,y
-          sta Enemy_X_Position,x
-          lda #$01                   ;put spiny within vertical screen unit
-          sta Enemy_Y_HighPos,x
-          lda Enemy_Y_Position,y     ;put spiny eight pixels above where lakitu is
-          sec
-          sbc #$08
-          sta Enemy_Y_Position,x
-          lda PseudoRandomBitReg,x   ;get 2 LSB of LSFR and save to Y
-          and #%00000011
-          tay
-          ldx #$02
-DifLoop:  lda PRDiffAdjustData,y     ;get three values and save them
-          sta $01,x                  ;to $01-$03
-          iny
-          iny                        ;increment Y four bytes for each value
-          iny
-          iny
-          dex                        ;decrement X for each one
-          bpl DifLoop                ;loop until all three are written
-          ldx ObjectOffset           ;get enemy object buffer offset
-          jsr PlayerLakituDiff       ;move enemy, change direction, get value - difference
-          ldy Player_X_Speed         ;check player's horizontal speed
-          cpy #$08
-          bcs SetSpSpd               ;if moving faster than a certain amount, branch elsewhere
-          tay                        ;otherwise save value in A to Y for now
-          lda PseudoRandomBitReg+1,x
-          and #%00000011             ;get one of the LSFR parts and save the 2 LSB
-          beq UsePosv                ;branch if neither bits are set
-          tya
-          eor #%11111111             ;otherwise get two's compliment of Y
-          tay
-          iny
-UsePosv:  tya                        ;put value from A in Y back to A (they will be lost anyway)
-SetSpSpd: jsr SmallBBox              ;set bounding box control, init attributes, lose contents of A
-          ldy #$02                   ;(putting this call elsewhere will preserve A)
-          sta Enemy_X_Speed,x        ;set horizontal speed to zero because previous contents
-          cmp #$00                   ;of A were lost...branch here will never be taken for
-          bmi SpinyRte               ;the same reason
-          dey
-SpinyRte: sty Enemy_MovingDir,x      ;set moving direction to the right
-          lda #$fd
-          sta Enemy_Y_Speed,x        ;set vertical speed to move upwards
-          lda #$01
-          sta Enemy_Flag,x           ;enable enemy object by setting flag
-          lda #$05
-          sta Enemy_State,x          ;put spiny in egg state and leave
-ChpChpEx: rts
+.include "actors/Spiny/CreateSpiny.asm"
+
+.include "actors/Spiny/DifLoop.asm"
+
+.include "actors/Spiny/UsePosv.asm"
+
+.include "actors/Spiny/SetSpSpd.asm"
+
+.include "actors/Spiny/SpinyRte.asm"
+
+.include "actors/CheepCheep/ChpChpEx.asm"
 
 ;--------------------------------
 
-FirebarSpinSpdData:
-      .byte $28, $38, $28, $38, $28
+.include "actors/Firebar/FirebarSpinSpdData.asm"
 
-FirebarSpinDirData:
-      .byte $00, $00, $10, $10, $00
+.include "actors/Firebar/FirebarSpinDirData.asm"
 
-InitLongFirebar:
-      jsr DuplicateEnemyObj       ;create enemy object for long firebar
+.include "actors/Firebar/InitLongFirebar.asm"
 
-InitShortFirebar:
-      lda #$00                    ;initialize low byte of spin state
-      sta FirebarSpinState_Low,x
-      lda Enemy_ID,x              ;subtract $1b from enemy identifier
-      sec                         ;to get proper offset for firebar data
-      sbc #$1b
-      tay
-      lda FirebarSpinSpdData,y    ;get spinning speed of firebar
-      sta FirebarSpinSpeed,x
-      lda FirebarSpinDirData,y    ;get spinning direction of firebar
-      sta FirebarSpinDirection,x
-      lda Enemy_Y_Position,x
-      clc                         ;add four pixels to vertical coordinate
-      adc #$04
-      sta Enemy_Y_Position,x
-      lda Enemy_X_Position,x
-      clc                         ;add four pixels to horizontal coordinate
-      adc #$04
-      sta Enemy_X_Position,x
-      lda Enemy_PageLoc,x
-      adc #$00                    ;add carry to page location
-      sta Enemy_PageLoc,x
-      jmp TallBBox2               ;set bounding box control (not used) and leave
-
-;--------------------------------
-;$00-$01 - used to hold pseudorandom bits
-
-FlyCCXPositionData:
-      .byte $80, $30, $40, $80
-      .byte $30, $50, $50, $70
-      .byte $20, $40, $80, $a0
-      .byte $70, $40, $90, $68
-
-FlyCCXSpeedData:
-      .byte $0e, $05, $06, $0e
-      .byte $1c, $20, $10, $0c
-      .byte $1e, $22, $18, $14
-
-FlyCCTimerData:
-      .byte $10, $60, $20, $48
-
-InitFlyingCheepCheep:
-         lda FrenzyEnemyTimer       ;if timer here not expired yet, branch to leave
-         bne ChpChpEx
-         jsr SmallBBox              ;jump to set bounding box size $09 and init other values
-         lda PseudoRandomBitReg+1,x
-         and #%00000011             ;set pseudorandom offset here
-         tay
-         lda FlyCCTimerData,y       ;load timer with pseudorandom offset
-         sta FrenzyEnemyTimer
-         ldy #$03                   ;load Y with default value
-         lda SecondaryHardMode
-         beq MaxCC                  ;if secondary hard mode flag not set, do not increment Y
-         iny                        ;otherwise, increment Y to allow as many as four onscreen
-MaxCC:   sty $00                    ;store whatever pseudorandom bits are in Y
-         cpx $00                    ;compare enemy object buffer offset with Y
-         bcs ChpChpEx               ;if X => Y, branch to leave
-         lda PseudoRandomBitReg,x
-         and #%00000011             ;get last two bits of LSFR, first part
-         sta $00                    ;and store in two places
-         sta $01
-         lda #$fb                   ;set vertical speed for cheep-cheep
-         sta Enemy_Y_Speed,x
-         lda #$00                   ;load default value
-         ldy Player_X_Speed         ;check player's horizontal speed
-         beq GSeed                  ;if player not moving left or right, skip this part
-         lda #$04
-         cpy #$19                   ;if moving to the right but not very quickly,
-         bcc GSeed                  ;do not change A
-         asl                        ;otherwise, multiply A by 2
-GSeed:   pha                        ;save to stack
-         clc
-         adc $00                    ;add to last two bits of LSFR we saved earlier
-         sta $00                    ;save it there
-         lda PseudoRandomBitReg+1,x
-         and #%00000011             ;if neither of the last two bits of second LSFR set,
-         beq RSeed                  ;skip this part and save contents of $00
-         lda PseudoRandomBitReg+2,x
-         and #%00001111             ;otherwise overwrite with lower nybble of
-         sta $00                    ;third LSFR part
-RSeed:   pla                        ;get value from stack we saved earlier
-         clc
-         adc $01                    ;add to last two bits of LSFR we saved in other place
-         tay                        ;use as pseudorandom offset here
-         lda FlyCCXSpeedData,y      ;get horizontal speed using pseudorandom offset
-         sta Enemy_X_Speed,x
-         lda #$01                   ;set to move towards the right
-         sta Enemy_MovingDir,x
-         lda Player_X_Speed         ;if player moving left or right, branch ahead of this part
-         bne D2XPos1
-         ldy $00                    ;get first LSFR or third LSFR lower nybble
-         tya                        ;and check for d1 set
-         and #%00000010
-         beq D2XPos1                ;if d1 not set, branch
-         lda Enemy_X_Speed,x
-         eor #$ff                   ;if d1 set, change horizontal speed
-         clc                        ;into two's compliment, thus moving in the opposite
-         adc #$01                   ;direction
-         sta Enemy_X_Speed,x
-         inc Enemy_MovingDir,x      ;increment to move towards the left
-D2XPos1: tya                        ;get first LSFR or third LSFR lower nybble again
-         and #%00000010
-         beq D2XPos2                ;check for d1 set again, branch again if not set
-         lda Player_X_Position      ;get player's horizontal position
-         clc
-         adc FlyCCXPositionData,y   ;if d1 set, add value obtained from pseudorandom offset
-         sta Enemy_X_Position,x     ;and save as enemy's horizontal position
-         lda Player_PageLoc         ;get player's page location
-         adc #$00                   ;add carry and jump past this part
-         jmp FinCCSt
-D2XPos2: lda Player_X_Position      ;get player's horizontal position
-         sec
-         sbc FlyCCXPositionData,y   ;if d1 not set, subtract value obtained from pseudorandom
-         sta Enemy_X_Position,x     ;offset and save as enemy's horizontal position
-         lda Player_PageLoc         ;get player's page location
-         sbc #$00                   ;subtract borrow
-FinCCSt: sta Enemy_PageLoc,x        ;save as enemy's page location
-         lda #$01
-         sta Enemy_Flag,x           ;set enemy's buffer flag
-         sta Enemy_Y_HighPos,x      ;set enemy's high vertical byte
-         lda #$f8
-         sta Enemy_Y_Position,x     ;put enemy below the screen, and we are done
-         rts
+.include "actors/Firebar/InitShortFirebar.asm"
 
 ;--------------------------------
 
-InitBowser:
-      jsr DuplicateEnemyObj     ;jump to create another bowser object
-      stx BowserFront_Offset    ;save offset of first here
-      lda #$00
-      sta BowserBodyControls    ;initialize bowser's body controls
-      sta BridgeCollapseOffset  ;and bridge collapse offset
-      lda Enemy_X_Position,x
-      sta BowserOrigXPos        ;store original horizontal position here
-      lda #$df
-      sta BowserFireBreathTimer ;store something here
-      sta Enemy_MovingDir,x     ;and in moving direction
-      lda #$20
-      sta BowserFeetCounter     ;set bowser's feet timer and in enemy timer
-      sta EnemyFrameTimer,x
-      lda #$05
-      sta BowserHitPoints       ;give bowser 5 hit points
-      lsr
-      sta BowserMovementSpeed   ;set default movement speed here
-      rts
+.include "actors/CheepCheep/FlyCCXPositionData.asm"
+
+.include "actors/CheepCheep/FlyCCXSpeedData.asm"
+
+.include "actors/CheepCheep/FlyCCTimerData.asm"
+
+.include "actors/CheepCheep/InitFlyingCheepCheep.asm"
+
+.include "actors/CheepCheep/MaxCC.asm"
+
+.include "actors/CheepCheep/GSeed.asm"
+
+.include "actors/CheepCheep/RSeed.asm"
+
+.include "actors/CheepCheep/D2XPos1.asm"
+
+.include "actors/CheepCheep/D2XPos2.asm"
+
+.include "actors/CheepCheep/FinCCSt.asm"
 
 ;--------------------------------
 
-DuplicateEnemyObj:
-        ldy #$ff                ;start at beginning of enemy slots
-FSLoop: iny                     ;increment one slot
-        lda Enemy_Flag,y        ;check enemy buffer flag for empty slot
-        bne FSLoop              ;if set, branch and keep checking
-        sty DuplicateObj_Offset ;otherwise set offset here
-        txa                     ;transfer original enemy buffer offset
-        ora #%10000000          ;store with d7 set as flag in new enemy
-        sta Enemy_Flag,y        ;slot as well as enemy offset
-        lda Enemy_PageLoc,x
-        sta Enemy_PageLoc,y     ;copy page location and horizontal coordinates
-        lda Enemy_X_Position,x  ;from original enemy to new enemy
-        sta Enemy_X_Position,y
-        lda #$01
-        sta Enemy_Flag,x        ;set flag as normal for original enemy
-        sta Enemy_Y_HighPos,y   ;set high vertical byte for new enemy
-        lda Enemy_Y_Position,x
-        sta Enemy_Y_Position,y  ;copy vertical coordinate from original to new
-FlmEx:  rts                     ;and then leave
+.include "actors/Bowser/InitBowser.asm"
 
 ;--------------------------------
 
-FlameYPosData:
-      .byte $90, $80, $70, $90
+.include "actors/uncategorized/DuplicateEnemyObj.asm"
 
-FlameYMFAdderData:
-      .byte $ff, $01
+.include "actors/uncategorized/FSLoop.asm"
 
-InitBowserFlame:
-        lda FrenzyEnemyTimer        ;if timer not expired yet, branch to leave
-        bne FlmEx
-        sta Enemy_Y_MoveForce,x     ;reset something here
-        lda NoiseSoundQueue
-        ora #Sfx_BowserFlame        ;load bowser's flame sound into queue
-        sta NoiseSoundQueue
-        ldy BowserFront_Offset      ;get bowser's buffer offset
-        lda Enemy_ID,y              ;check for bowser
-        cmp #Bowser
-        beq SpawnFromMouth          ;branch if found
-        jsr SetFlameTimer           ;get timer data based on flame counter
-        clc
-        adc #$20                    ;add 32 frames by default
-        ldy SecondaryHardMode
-        beq SetFrT                  ;if secondary mode flag not set, use as timer setting
-        sec
-        sbc #$10                    ;otherwise subtract 16 frames for secondary hard mode
-SetFrT: sta FrenzyEnemyTimer        ;set timer accordingly
-        lda PseudoRandomBitReg,x
-        and #%00000011              ;get 2 LSB from first part of LSFR
-        sta BowserFlamePRandomOfs,x ;set here
-        tay                         ;use as offset
-        lda FlameYPosData,y         ;load vertical position based on pseudorandom offset
+.include "actors/Bowser/FlmEx.asm"
 
-PutAtRightExtent:
-      sta Enemy_Y_Position,x    ;set vertical position
-      lda ScreenRight_X_Pos
-      clc
-      adc #$20                  ;place enemy 32 pixels beyond right side of screen
-      sta Enemy_X_Position,x
-      lda ScreenRight_PageLoc
-      adc #$00                  ;add carry
-      sta Enemy_PageLoc,x
-      jmp FinishFlame           ;skip this part to finish setting values
+;--------------------------------
+
+.include "actors/Bowser/FlameYPosData.asm"
+
+.include "actors/Bowser/FlameYMFAdderData.asm"
+
+.include "actors/Bowser/InitBowserFlame.asm"
+
+.include "actors/Bowser/SetFrT.asm"
+
+.include "actors/uncategorized/PutAtRightExtent.asm"
 
 SpawnFromMouth:
        lda Enemy_X_Position,y    ;get bowser's horizontal position

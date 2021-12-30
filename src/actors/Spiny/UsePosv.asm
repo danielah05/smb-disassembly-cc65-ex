@@ -1,0 +1,1 @@
+UsePosv:  tya                        ;put value from A in Y back to A (they will be lost anyway)
